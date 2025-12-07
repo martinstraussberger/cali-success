@@ -1,0 +1,16 @@
+{
+  "name": "cali-success",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Phaser 3 scenic moto run game with GitHub Pages deployment",
+  "scripts": {
+    "setup": "echo 'No image optimization step defined for this project'",
+    "build:prepare": "echo 'Validations placeholder'",
+    "predeploy:pages": "npm run build",
+    "deploy:pages": "gh-pages -d .",
+    "build": "echo 'Static site: no build step needed'"
+  },
+  "devDependencies": {
+    "gh-pages": "^6.1.1"
+  }
+}

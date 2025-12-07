@@ -1,0 +1,20 @@
+/* Base styles and theme variables */
+:root {
+  --brand: #CF3D3E;
+  --bg: #0a0f1f;
+  --text: #eaeef6;
+  --panel-bg: rgba(13, 18, 30, 0.92);
+  --panel-border: rgba(255, 255, 255, 0.08);
+}
+html, body {
+  height: 100%;
+  margin: 0;
+  background: linear-gradient(180deg, #09101c 0%, #0c1323 100%);
+  color: var(--text);
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+.game-shell { display: grid; place-items: center; height: 100%; }
+.brand { color: var(--brand); }
+.center-note { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: var(--text); pointer-events: none; }
+.center-note h1 { margin: 0 0 8px 0; font-weight: 800; letter-spacing: 1px; }
+.center-note p { margin: 4px 0; opacity: 0.8; }

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>The Scenic Moto Run — Prototype</title>
+		<!-- Phaser 3 via CDN as ES module shim -->
+		<script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
+		<!-- Split CSS files -->
+		<link href="https://fonts.cdnfonts.com/css/poppins" rel="stylesheet">
+		<link rel="stylesheet" href="public/css/base.css" />
+		<!-- Legacy HUD CSS removed to avoid MIME errors; cockpit HUD is in-canvas -->
+		<link rel="stylesheet" href="public/css/panel.css" />
+	</head>
+	<body>
+		<div class="game-shell">
+			<div id="game"></div>
+		</div>
+
+		<!-- Legacy HUD removed; cockpit HUD is rendered in-canvas -->
+
+		<!-- Milestone sidepanel -->
+		<aside class="sidepanel" id="sidepanel">
+			<header>
+				<h2 id="panelTitle">Milestone</h2>
+				<p>Press Enter to continue the run.</p>
+			</header>
+			<div class="content">
+				<div class="placeholder" id="panelImage"></div>
+				<div class="milestone-text" id="panelText">—</div>
+			</div>
+			<footer>
+				<span class="brand">The Scenic Moto Run</span> — Atmospheric milestones along the road.
+			</footer>
+		</aside>
+
+		<script type="module" src="/src/js/main.js"></script>
+	</body>
+</html>
