@@ -2,7 +2,10 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+		<meta name="theme-color" content="#0c1323" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="mobile-web-app-capable" content="yes" />
 		<title>The Scenic Moto Run — Prototype</title>
 		<!-- Phaser 3 via CDN as ES module shim -->
 		<script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
@@ -15,6 +18,21 @@
 	<body>
 		<div class="game-shell">
 			<div id="game"></div>
+		</div>
+
+		<!-- Mobile controls (shown on touch devices in landscape) -->
+		<div id="mobileHud" class="mobile-hud" aria-hidden="true">
+			<button id="btnBrake" class="mobile-btn mobile-btn--left" aria-label="Brake">Brake</button>
+			<button id="btnJump" class="mobile-btn mobile-btn--center" aria-label="Jump & Turbo">Turbo</button>
+			<button id="btnAccel" class="mobile-btn mobile-btn--right" aria-label="Accelerate">Accel</button>
+		</div>
+
+		<!-- Rotate overlay for portrait orientation -->
+		<div id="rotateOverlay" class="rotate-overlay" role="dialog" aria-live="polite">
+			<div class="rotate-card">
+				<h3>Rotate Device</h3>
+				<p>Play in landscape for the best ride.</p>
+			</div>
 		</div>
 
 		<!-- Legacy HUD removed; cockpit HUD is rendered in-canvas -->

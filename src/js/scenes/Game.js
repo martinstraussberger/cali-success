@@ -148,6 +148,14 @@ export class Game extends Phaser.Scene {
             enter: Phaser.Input.Keyboard.KeyCodes.ENTER,
         });
 
+        // Mobile control flags
+        this.mobileAccel = false;
+        this.mobileBrake = false;
+        this.mobileSpaceDown = false;
+        this.mobileSpaceJustDown = false;
+        this.isTouchDevice = (('ontouchstart' in window) || navigator.maxTouchPoints > 0);
+        this.setupMobileControls();
+
         this.physics.world.setBounds(0, 0, W, H);
 
         // Build parallax with city background + clouds/birds
@@ -235,6 +243,74 @@ export class Game extends Phaser.Scene {
             const v = Number(volSlider.value) / 100;
             if (this.bgMusic) this.bgMusic.setVolume(v);
         });
+    }
+
+    // Set up mobile HUD buttons and orientation handling
+    setupMobileControls() {
+        const hud = document.getElementById('mobileHud');
+        const btnAccel = document.getElementById('btnAccel');
+        const btnBrake = document.getElementById('btnBrake');
+        const btnJump = document.getElementById('btnJump');
+        const rotateOverlay = document.getElementById('rotateOverlay');
+
+        const isLandscape = () => window.innerWidth >= window.innerHeight;
+        const updateOrientationUI = () => {
+            const showRotate = this.isTouchDevice && !isLandscape();
+            if (rotateOverlay) rotateOverlay.style.display = showRotate ? 'flex' : 'none';
+            if (hud) hud.style.display = (this.isTouchDevice && isLandscape()) ? 'block' : 'none';
+        };
+        updateOrientationUI();
+        window.addEventListener('resize', updateOrientationUI);
+        window.addEventListener('orientationchange', updateOrientationUI);
+
+        const onDown = (setter) => (e) => { e.preventDefault(); setter(true); };
+        const onUp = (setter) => (e) => { e.preventDefault(); setter(false); };
+
+        if (btnAccel) {
+            ['pointerdown','touchstart','mousedown'].forEach(ev => btnAccel.addEventListener(ev, onDown((v)=>{ this.mobileAccel = v; })));
+            ['pointerup','touchend','mouseup','mouseleave'].forEach(ev => btnAccel.addEventListener(ev, onUp((v)=>{ this.mobileAccel = v; })));
+        }
+        if (btnBrake) {
+            ['pointerdown','touchstart','mousedown'].forEach(ev => btnBrake.addEventListener(ev, onDown((v)=>{ this.mobileBrake = v; })));
+            ['pointerup','touchend','mouseup','mouseleave'].forEach(ev => btnBrake.addEventListener(ev, onUp((v)=>{ this.mobileBrake = v; })));
+        }
+        if (btnJump) {
+            ['pointerdown','touchstart','mousedown'].forEach(ev => btnJump.addEventListener(ev, (e) => {
+                e.preventDefault();
+                this.mobileSpaceDown = true;
+                this.mobileSpaceJustDown = true;
+            }));
+            ['pointerup','touchend','mouseup','mouseleave'].forEach(ev => btnJump.addEventListener(ev, (e) => {
+                e.preventDefault();
+                this.mobileSpaceDown = false;
+            }));
+        }
+
+        // Wheelie button removed
+
+        // Gesture fallback: press right/left half to accel/brake; quick upward flick to jump
+        if (this.isTouchDevice) {
+            this.input.on('pointerdown', (pointer) => {
+                // Ignore if tapping on HUD buttons
+                // Phaser receives events even over DOM; rely on half-screen zones
+                if (pointer.x >= this.scale.width / 2) this.mobileAccel = true; else this.mobileBrake = true;
+                pointer._startY = pointer.y;
+            });
+            this.input.on('pointerup', () => {
+                this.mobileAccel = false;
+                this.mobileBrake = false;
+            });
+            this.input.on('pointermove', (pointer) => {
+                if (typeof pointer._startY === 'number') {
+                    const dy = pointer._startY - pointer.y;
+                    if (dy > 40) { // upward swipe
+                        this.mobileSpaceDown = true;
+                        this.mobileSpaceJustDown = true;
+                        pointer._startY = undefined;
+                    }
+                }
+            });
+        }
     }
 
     // Create a more realistic highway street at the bottom third of the screen, keeping green lines
@@ -425,6 +501,16 @@ export class Game extends Phaser.Scene {
     }
 
     showMilestonePanel(ms) {
+        // On mobile/touch devices: do not pause or open sidepanel; show lightweight toast
+        if (this.isTouchDevice) {
+            const W = this.scale.width, H = this.scale.height;
+            const toast = this.add.text(W / 2, H / 2 - 140, ms.title, {
+                fontSize: '24px', color: '#f6ff00'
+            }).setOrigin(0.5).setDepth(1000);
+            this.tweens.add({ targets: toast, alpha: { from: 1, to: 0 }, delay: 800, duration: 600, onComplete: () => toast.destroy() });
+            return;
+        }
+        // Desktop behavior: pause and open sidepanel
         this.isPausedForPanel = true;
         this.physics.world.pause();
         // Stop motorcycle wheelie/jump loop while panel is open
@@ -580,19 +666,23 @@ export class Game extends Phaser.Scene {
         if (this.invulnTimer > 0) this.invulnTimer = Math.max(0, this.invulnTimer - dt);
 
         if (this.isPausedForPanel) {
+            // Only pause for desktop; mobile never sets isPausedForPanel
             if (Phaser.Input.Keyboard.JustDown(this.keys.enter)) this.closeMilestonePanel();
             return;
         }
 
         // During turbo slowdown phase, let the interpolator control speed (avoid immediate clamp to base max)
         if (!this.isTurboSlowing) {
-            if (this.keys.right.isDown) this.speed = Util.clamp(this.speed + this.accel * dt, 0, this.maxSpeed);
-            else if (this.keys.left.isDown) this.speed = Util.clamp(this.speed - this.brake * dt, 0, this.maxSpeed);
+            const accelDown = this.keys.right.isDown || this.mobileAccel;
+            const brakeDown = this.keys.left.isDown || this.mobileBrake;
+            if (accelDown) this.speed = Util.clamp(this.speed + this.accel * dt, 0, this.maxSpeed);
+            else if (brakeDown) this.speed = Util.clamp(this.speed - this.brake * dt, 0, this.maxSpeed);
             else this.speed = Util.clamp(this.speed - 40 * dt, 0, this.maxSpeed);
         }
 
         // Start jump/wheelie on initial press: start looping sound while held
-        if (Phaser.Input.Keyboard.JustDown(this.keys.space)) {
+        const spacePressed = Phaser.Input.Keyboard.JustDown(this.keys.space) || this.mobileSpaceJustDown;
+        if (spacePressed) {
             if (this.wheelieSfx) this.wheelieSfx.play({ loop: true });
             if (this.player.y >= this.groundY - 2) {
                 this.player.setVelocityY(-420);
@@ -621,7 +711,8 @@ export class Game extends Phaser.Scene {
         }
 
         // Sustain jump/wheelie while SPACE is held, for a consistent feel
-        if (this.keys.space.isDown) {
+        const spaceDown = this.keys.space.isDown || this.mobileSpaceDown;
+        if (spaceDown) {
             if (this.isJumping) {
                 // Allow sustained upward acceleration while within max hold window
                 if (this.jumpHoldTime < this.maxJumpHold) {
@@ -647,7 +738,7 @@ export class Game extends Phaser.Scene {
         }
 
         // Handle SPACE release audio: stop loop, no extra play
-        if (this.spaceWasDown && !this.keys.space.isDown) {
+        if (this.spaceWasDown && !spaceDown) {
             // Stop wheelie/jump sound loop on release
             if (this.wheelieSfx) {
                 this.wheelieSfx.stop();
@@ -663,7 +754,9 @@ export class Game extends Phaser.Scene {
             }
         }
         // Update tracked state
-        this.spaceWasDown = this.keys.space.isDown;
+        this.spaceWasDown = spaceDown;
+        // Reset mobile justDown after handling
+        this.mobileSpaceJustDown = false;
 
         // Auto-end turbo if it exceeds max duration (3 seconds), except in Ghostrider mode (6+ skulls)
         if (this.isTurbo && this.skulls < 6) {
