@@ -125,6 +125,8 @@ export class Game extends Phaser.Scene {
         this.turboPosBiasSpeed = 120; // pixels/sec for bias change
         // Flag to show end-of-run continuation message once
         this.continuedShown = false;
+        // Track if wheelie sound is force-looping due to 600 km/h Ghostrider
+        this.ghostriderWheelieLoop = false;
     }
 
     create() {
@@ -177,8 +179,9 @@ export class Game extends Phaser.Scene {
         this.speedcams = this.add.group();
         this.lastSpeedcamSpawnTime = 0;
         this.lastSpeedcamTriggerTime = 0;
-        this.minSpeedcamIntervalMs = 1500; // minimum gap to prevent back-to-back speedcams
-        this.time.addEvent({ delay: 9000, loop: true, callback: () => this.spawnSpeedcam(W, H) });
+        // Drastically increase speedcam frequency
+        this.minSpeedcamIntervalMs = 600; // minimum gap to prevent back-to-back speedcams
+        this.time.addEvent({ delay: 4500, loop: true, callback: () => this.spawnSpeedcam(W, H) });
 
         // Police cars group
         this.policeCars = this.physics.add.group();
@@ -699,6 +702,23 @@ export class Game extends Phaser.Scene {
             } else {
                 layer.sprite.x -= scrollX * (layer.scrollFactor * 1.3);
                 if (layer.sprite.x < -this.scale.width / 2) layer.sprite.x = this.scale.width / 2;
+            }
+        }
+
+        // Ensure wheelie/jump sound repeats while at top Ghostrider speed (600 km/h)
+        const atGhostTopSpeed = this.speed >= (this.turboPosBiasGhostriderSpeed - 0.1) && this.skulls >= 6;
+        if (this.wheelieSfx) {
+            if (atGhostTopSpeed) {
+                if (!this.wheelieSfx.isPlaying) {
+                    this.wheelieSfx.play({ loop: true });
+                }
+                this.ghostriderWheelieLoop = true;
+            } else {
+                // If we were force-looping due to Ghostrider top speed, stop when leaving 600
+                if (this.ghostriderWheelieLoop && this.wheelieSfx.isPlaying && !this.keys.space.isDown) {
+                    this.wheelieSfx.stop();
+                    this.ghostriderWheelieLoop = false;
+                }
             }
         }
 
