@@ -58,26 +58,30 @@ export class MainMenu extends Phaser.Scene {
     });
 
     // Extra info: Turbo charges and Ghostrider mode behavior
-    const info1 = this.add.text(0, card.y + cardH / 2 + 25, 'You have max 5 Turbo Chargers. Each Space press consumes 1.', {
+    const info1 = this.add.text(0, card.y + cardH / 2 + 25, 'You have max 5 Turbo Chargers. Each Space press consumes 1 Turbo Charge.', {
       fontFamily: 'Helvetica, Arial, sans-serif', fontSize: '24px', color: '#f6ff00'
     }).setOrigin(0.5);
     const info2 = this.add.text(0, card.y + cardH / 2 + 60, 'Each white ☠️ increases Ghostrider mode and attracts more police.', {
       fontFamily: 'Helvetica, Arial, sans-serif', fontSize: '16px', color: '#eaeef6'
     }).setOrigin(0.5);
 
-    const info3 = this.add.text(0, card.y + cardH / 2 + 90, 'Reach 17/17 Milestones.', {
+    const info3 = this.add.text(0, card.y + cardH / 2 + 90, 'Reach 10/10 Milestones.', {
       fontFamily: 'Helvetica, Arial, sans-serif', fontSize: '21px', color: '#eaeef6'
     }).setOrigin(0.5);
 
-    const info4 = this.add.text(0, card.y + cardH / 2 + 120, 'Playtime at full speed: 1min 30sec', {
+    const info4 = this.add.text(0, card.y + cardH / 2 + 130, 'Playtime at full speed: ~ 1min 10sec (Note: Currently early access --> No mobile support 😝.', {
       fontFamily: 'Helvetica, Arial, sans-serif', fontSize: '21px', color: '#eaeef6'
     }).setOrigin(0.5);
 
-    const hint = this.add.text(0, card.y + cardH / 2 + 180, 'Press Space to Begin', {
+        const info5 = this.add.text(0, card.y + cardH / 2 + 180, 'Important Side Note: Do not try this at home 🚫🏠. (all characters and speeds are fictional)', {
+      fontFamily: 'Helvetica, Arial, sans-serif', fontSize: '21px', color: '#eaeef6'
+    }).setOrigin(0.5);
+
+    const hint = this.add.text(0, card.y + cardH / 2 + 230, 'Press Space to Begin', {
       fontFamily: 'Helvetica, Arial, sans-serif', fontSize: '32px', color: '#CF3D3E'
     }).setOrigin(0.5);
 
-    container.add([icon, accent, card, cardHeader, ...rowContainers, info1, info2, info3, info4, hint, title]);
+    container.add([icon, accent, card, cardHeader, ...rowContainers, info1, info2, info3, info4, info5, hint, title]);
     this.tweens.add({ targets: hint, alpha: { from: 0.6, to: 1 }, yoyo: true, repeat: -1, duration: 900, ease: 'Sine.easeInOut' });
     this.tweens.add({ targets: card, y: { from: card.y - 2, to: card.y + 2 }, yoyo: true, repeat: -1, duration: 2000, ease: 'Sine.easeInOut' });
     this.input.keyboard.once('keydown-SPACE', () => this.scene.start('Game'));
