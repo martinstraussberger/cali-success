@@ -31,6 +31,43 @@ export class Game extends Phaser.Scene {
         this.load.audio('bgMusic', 'src/js/audio/racing-road-bg-audio.mp3');
     }
 
+    // Single shared HUD for police speed (styled like player HUD; speed in red; one HUD for all cars)
+    updatePoliceHUD() {
+        // Choose target car: prefer final police; else fastest active chasing car
+        let targetCar = null;
+        if (this.finalPolice && this.finalPolice.active) {
+            targetCar = this.finalPolice;
+        } else if (this.policeCars) {
+            let maxSpeed = -1;
+            this.policeCars.getChildren().forEach((car) => {
+                if (car.active && car.isChasing) {
+                    const s = car.speed || 0;
+                    if (s > maxSpeed) {
+                        maxSpeed = s;
+                        targetCar = car;
+                    }
+                }
+            });
+        }
+
+        if (!targetCar) {
+            if (this.policeHudText) this.policeHudText.setVisible(false);
+            return;
+        }
+
+        if (!this.policeHudText) {
+            this.policeHudText = this.add.text(0, 0, '0 km/h', { fontSize: '28px', color: '#CF3D3E' })
+                .setDepth(20)
+                .setOrigin(0.5);
+            this.policeHudText.setScale(1.2);
+        }
+
+        this.policeHudText.setText(`${Math.round(targetCar.speed || 0)} km/h`);
+        this.policeHudText.x = targetCar.x;
+        this.policeHudText.y = targetCar.y - 60;
+        this.policeHudText.setVisible(true);
+    }
+
     init() {
         this.speed = 0;
         this.maxSpeed = 322;
@@ -42,7 +79,7 @@ export class Game extends Phaser.Scene {
         this.nextMilestoneAt = 620;
         this.isPausedForPanel = false;
         this.gameOver = false;
-        this.lives = 10; // legacy lives (not used for skulls)
+        this.lives = 8; // legacy lives (not used for skulls)
         this.skulls = 0; // skulls increase when speedcam triggers
         this.invulnTimer = 0;
         this.keys = null;
@@ -73,6 +110,8 @@ export class Game extends Phaser.Scene {
         // Control final police disappearance timing after Ghostrider activation
         this.finalPoliceCanDisappearAfterGhostrider = false;
         this.finalPoliceGhostriderTimer = null;
+        // Single shared HUD for police speed (one HUD for all police cars)
+        this.policeHudText = null;
         // Ghostrider mode subtle shake controller
         this.ghostShakeEvent = null;
         // Run timer
@@ -136,6 +175,9 @@ export class Game extends Phaser.Scene {
         this.groundY = H - 120;
 
         this.speedcams = this.add.group();
+        this.lastSpeedcamSpawnTime = 0;
+        this.lastSpeedcamTriggerTime = 0;
+        this.minSpeedcamIntervalMs = 1500; // minimum gap to prevent back-to-back speedcams
         this.time.addEvent({ delay: 9000, loop: true, callback: () => this.spawnSpeedcam(W, H) });
 
         // Police cars group
@@ -176,7 +218,7 @@ export class Game extends Phaser.Scene {
             volSlider.type = 'range';
             volSlider.min = '0';
             volSlider.max = '100';
-            volSlider.value = '40';
+            volSlider.value = '30';
             volSlider.id = 'bgVolume';
             volSlider.style.position = 'fixed';
             volSlider.style.right = '16px';
@@ -251,7 +293,7 @@ export class Game extends Phaser.Scene {
         const isTopEdge = Math.random() < 0.5;
         const y = H - (isTopEdge ? roadHeight - 18 : 18);
         const x = Phaser.Math.Between(0, W);
-        const key = `roadpost-${Phaser.Math.RND.uuid().slice(0,5)}`;
+        const key = `roadpost-${Phaser.Math.RND.uuid().slice(0, 5)}`;
         const g = this.add.graphics();
         g.fillStyle(0x8fb57b, 1);
         g.fillRoundedRect(0, 0, 8, 22, 3);
@@ -323,11 +365,17 @@ export class Game extends Phaser.Scene {
     }
 
     spawnSpeedcam(W, H) {
+        // Prevent speedcams from spawning too soon after the last spawn or trigger
+        const now = this.time.now || performance.now();
+        const lastEventTime = Math.max(this.lastSpeedcamSpawnTime || 0, this.lastSpeedcamTriggerTime || 0);
+        if (now - lastEventTime < this.minSpeedcamIntervalMs) {
+            return;
+        }
         const x = W + 60;
         // Position speedcams near the top green line of the road (bottom third)
         const roadHeight = Math.floor(H / 3);
         const y = H - roadHeight - 6; // slightly above the green line for visibility
-        const key = `speedcam-${Phaser.Math.RND.uuid().slice(0, 5)}`;
+        const key = `speedcam-${Phaser.Math.RND.uuid().slice(0, 6)}`;
         const g = this.add.graphics();
         g.fillStyle(0x3a4666, 1);
         g.fillRect(8, 0, 10, 70);
@@ -340,6 +388,7 @@ export class Game extends Phaser.Scene {
         const cam = this.add.image(x, y, key).setDepth(2);
         cam.triggered = false;
         this.speedcams.add(cam);
+        this.lastSpeedcamSpawnTime = now;
     }
 
     takeHit() {
@@ -355,9 +404,9 @@ export class Game extends Phaser.Scene {
     }
 
     respawnAtCheckpoint() {
-        this.lives = 10;
+        this.lives = 8;
         this.speed = 0;
-        this.player.x = 160;
+        this.nextMilestoneAt = 100;
         this.player.y = this.groundY;
         this.player.setVelocity(0, 0);
         this.distance = this.milestoneIndex * this.nextMilestoneAt;
@@ -388,7 +437,8 @@ export class Game extends Phaser.Scene {
             this.panelTextEl.style.lineHeight = '1.4';
         }
         this.panelTitleEl.textContent = `${ms.title}`;
-        this.panelTextEl.textContent = `${ms.text}`;
+        // Render HTML to support multiple paragraphs with spacing
+        this.panelTextEl.innerHTML = ms.htmlText || `${ms.text}`;
         this.sidepanelEl.classList.add('open');
     }
 
@@ -421,7 +471,7 @@ export class Game extends Phaser.Scene {
                 pin.destroy();
                 this.currentPinSpawned = false;
                 // Grant extra turbo charges at specific milestones (4th, 7th, 10th, 13th)
-                if ([4, 7, 10, 13].includes(this.milestoneIndex)) {
+                if ([4, 6, 8].includes(this.milestoneIndex)) {
                     const before = this.turboCount;
                     this.turboCount = Math.min(5, this.turboCount + 3);
                     // Small center note to inform the player
@@ -448,7 +498,7 @@ export class Game extends Phaser.Scene {
         const bg = this.add.rectangle(0, 0, W * 0.8, H * 0.6, 0x121a2f).setStrokeStyle(2, 0x253052, 0.8);
         const title = this.add.text(0, -H * 0.18, success ? 'Journey Complete' : 'Game Over', { fontSize: '42px', color: '#ffffff' }).setOrigin(0.5);
         const brand = this.add.text(0, -H * 0.26, 'The Scenic Moto Run', { fontSize: '18px', color: '#CF3D3E' }).setOrigin(0.5);
-        const msgText = success ? 'You reached all 17 milestones. Scenic memories unlocked.' : 'The ride paused. Try again for the views.';
+        const msgText = success ? 'You reached all 10 milestones. Scenic memories unlocked.' : 'The ride paused. Try again for the views.';
         const msg = this.add.text(0, -20, msgText, { fontSize: '18px', color: '#cfd6ec' }).setOrigin(0.5);
         const hint = this.add.text(0, 40, 'Press Space to Restart', { fontSize: '18px', color: '#cfd6ec' }).setOrigin(0.5);
         panel.add([bg, brand, title, msg, hint]);
@@ -556,6 +606,10 @@ export class Game extends Phaser.Scene {
                 // If 6+ skulls, use Ghostrider turbo speed; otherwise normal turbo speed
                 this.maxSpeed = (this.skulls >= 6) ? this.turboPosBiasGhostriderSpeed : this.turboMaxSpeed;
                 this.turboStartSpeed = this.speed;
+                // In Ghostrider mode, immediately set speed to 600 km/h so cockpit reflects it instantly
+                if (this.skulls >= 6) {
+                    this.speed = this.turboPosBiasGhostriderSpeed;
+                }
                 // Consume one charge on press only if not in Ghostrider mode
                 if (this.skulls < 6) {
                     this.turboCount = Math.max(0, Math.min(5, this.turboCount - 1));
@@ -725,12 +779,7 @@ export class Game extends Phaser.Scene {
                         const tSlow = car.slowDuration ? car.slowElapsed / car.slowDuration : 1;
                         const tClamped = Phaser.Math.Clamp(tSlow, 0, 1);
                         car.speed = Phaser.Math.Linear(car.slowStartSpeed || car.speed, car.maxSpeed, tClamped);
-                        // Update HUD to reflect current speed
-                        if (car.hud) {
-                            car.hud.setText(`${Math.round(car.speed)} km/h`);
-                            car.hud.x = car.x;
-                            car.hud.y = car.y - 40;
-                        }
+                        // Shared police HUD updated centrally
                         if (tClamped >= 1) {
                             car.isSlowing = false;
                             car.reachedCap = true;
@@ -739,16 +788,11 @@ export class Game extends Phaser.Scene {
                         // Ensure speed doesn't  e
                         //  xceed maxSpeed outside slowdown logic
                         car.speed = Math.min(car.speed, car.maxSpeed);
-                        // Keep HUD positioned
-                        if (car.hud) {
-                            car.hud.x = car.x;
-                            car.hud.y = car.y - 40;
-                        }
+                        // Shared police HUD updated centrally
                     }
                 }
                 // Cleanup if far off left
                 if (car.x < -120) {
-                    if (car.hud) car.hud.destroy();
                     car.destroy();
                     if (this.finalPolice === car) this.finalPolice = null;
                 }
@@ -834,8 +878,10 @@ export class Game extends Phaser.Scene {
             if (!this.gameOver && !this.isPausedForPanel && !cam.triggered && this.player.x > cam.x + 10) {
                 cam.triggered = true;
                 this.SFX.playSpeedcam();
+                // Record trigger time to enforce spawn cooldown
+                this.lastSpeedcamTriggerTime = this.time.now || performance.now();
                 // Flashing light effect: small white strobe on camera and brief fullscreen white flash
-                const flashKey = `flash-${Phaser.Math.RND.uuid().slice(0,5)}`;
+                const flashKey = `flash-${Phaser.Math.RND.uuid().slice(0, 5)}`;
                 const fg = this.add.graphics();
                 fg.fillStyle(0xffffff, 0.98);
                 fg.fillCircle(10, 10, 10);
@@ -895,15 +941,20 @@ export class Game extends Phaser.Scene {
                         onComplete: () => ghostMsg.destroy()
                     });
                 }
-                // Increase skulls on each speedcam trigger (cap at 10)
+                // Increase skulls on each speedcam trigger (cap at 8)
                 const before = this.skulls;
-                this.skulls = Math.min(this.skulls + 1, 10);
+                this.skulls = Math.min(this.skulls + 1, 8);
                 // Play creepy ghost whisper only on first and fifth skull
                 if (this.skulls > before && (this.skulls === 1 || this.skulls === 5) && this.ghostSfx) {
                     this.ghostSfx.play();
                 }
                 // On crossing into Ghostrider mode (exact moment of reaching 6 skulls)
                 if (before < 6 && this.skulls >= 6) {
+                    // Immediately push speed and cap to Ghostrider turbo (600 km/h)
+                    this.maxSpeedPrev = this.maxSpeed;
+                    this.maxSpeed = this.turboPosBiasGhostriderSpeed;
+                    this.speed = this.turboPosBiasGhostriderSpeed;
+                    this.isTurbo = true;
                     // Stop whisper if it is still playing
                     if (this.ghostSfx && this.ghostSfx.isPlaying) this.ghostSfx.stop();
                     // Play ghostrider mode activation SFX once, slightly louder than bg
@@ -1021,6 +1072,8 @@ export class Game extends Phaser.Scene {
         this.updateHUD();
         this.updateCockpitHUD();
         this.updateTimerUI(dt);
+        // Update shared police HUD (one HUD for multiple police cars)
+        this.updatePoliceHUD();
 
         // Handle smooth slowdown from turbo: linearly reduce speed to base cap over configured duration
         if (this.isTurboSlowing) {
@@ -1049,9 +1102,6 @@ export class Game extends Phaser.Scene {
         car.isSlowing = false; // indicates post-turbo deceleration phase
         car.isFinal = false;
         car.reachedCap = false;
-        // HUD displaying police speed
-        const hud = this.add.text(0, 0, '428 km/h', { fontSize: '18px', color: '#eaeef6' }).setDepth(4).setOrigin(0.5);
-        car.hud = hud;
         this.policeCars.add(car);
 
         // Start chase 0.5s after trigger
@@ -1066,10 +1116,12 @@ export class Game extends Phaser.Scene {
                 this.finalPolice = car;
                 car.finalElapsed = 0;
                 // Each second accumulate elapsed for progressive zoom
-                car.finalTick = this.time.addEvent({ delay: 1000, loop: true, callback: () => {
-                    if (!car.active) return;
-                    car.finalElapsed += 1;
-                }});
+                car.finalTick = this.time.addEvent({
+                    delay: 1000, loop: true, callback: () => {
+                        if (!car.active) return;
+                        car.finalElapsed += 1;
+                    }
+                });
                 // Despawn after 15s regardless of speed
                 this.time.delayedCall(15000, () => {
                     if (!car.active) return;
@@ -1097,8 +1149,8 @@ export class Game extends Phaser.Scene {
     }
 
     updateHUD() {
-                // Legacy HUD removed; no-op
-                return;
+        // Legacy HUD removed; no-op
+        return;
     }
 
     // Create a semicircular cockpit HUD rendered with Phaser graphics
@@ -1140,7 +1192,7 @@ export class Game extends Phaser.Scene {
         const kmh = this.add.text(0, -10, 'km/h', { fontSize: '12px', color: '#cfd6ec' }).setOrigin(0.5);
 
         // Milestones counter (bottom-right of HUD)
-        const milestoneText = this.add.text(70, -20, '0/17', { fontSize: '14px', color: '#eaeef6' }).setOrigin(0.5);
+        const milestoneText = this.add.text(70, -20, '0/10', { fontSize: '14px', color: '#eaeef6' }).setOrigin(0.5);
         // Turbo counter (top-right of HUD)
         const turboText = this.add.text(70, -46, 'Turbo: 5/5', { fontSize: '12px', color: '#eaeef6' }).setOrigin(0.5);
 
@@ -1187,7 +1239,7 @@ export class Game extends Phaser.Scene {
         this.cockpitSpeedLabel.setText(String(speedVal));
 
         // Update milestones
-        const msVal = `${Math.min(this.milestoneIndex, 17)}/17`;
+        const msVal = `${Math.min(this.milestoneIndex, 10)}/10`;
         this.cockpitMilestoneText.setText(msVal);
         // Update turbo counter UI (max 5)
         if (this.cockpitTurboText) {
@@ -1200,7 +1252,7 @@ export class Game extends Phaser.Scene {
             }
             // Slight highlight when turbo is active
             this.cockpitTurboText.setColor(this.isTurbo ? '#f6ff00' : '#eaeef6');
-        } 
+        }
 
 
         // Needle angle based on speed (map 0..maxSpeed to π..2π)
@@ -1293,7 +1345,7 @@ export class Game extends Phaser.Scene {
         const baseX = this.skullContainer.x;
         const baseY = this.skullContainer.y;
         // Position near the right side of the skull bar
-        const uiX = baseX * z + 16 * z + 22 * (Math.min(this.skulls, 10) - 1) * z + Phaser.Math.Between(-6, 10) * z;
+        const uiX = baseX * z + 16 * z + 22 * (Math.min(this.skulls, 8) - 1) * z + Phaser.Math.Between(-6, 10) * z;
         const uiY = baseY * z + 16 * z + Phaser.Math.Between(-4, 6) * z;
         const s = this.add.image(uiX, uiY, 'flameParticle').setDepth(1000);
         s.setScale(0.8 / z);
@@ -1311,13 +1363,13 @@ export class Game extends Phaser.Scene {
 
     // Fixed lives UI at top-left of the canvas, larger size
     createLivesUI() {
-        // Top-left skull bar: 10 skulls, reached skulls in default color, unreached in red
+        // Top-left skull bar: 8 skulls, reached skulls in default color, unreached in neon yellow
         this.skullContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(20);
         this.skullTexts = [];
         const startX = 16;
         const startY = 16;
         const spacing = 22;
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 8; i++) {
             // Use '☠' (skull and crossbones) which respects text color
             const t = this.add.text(startX + i * spacing, startY, '☠', { fontSize: '36px', color: '#f6ff00' });
             this.skullContainer.add(t);
@@ -1334,27 +1386,35 @@ export class Game extends Phaser.Scene {
             this.skullTexts[i].setColor(reached ? '#fff' : '#f6ff00');
         }
         // Keep comfortably inside viewport even when camera zooms
-        const pad = 80;
+        // Move further right during Ghostrider turbo (600 km/h)
+        const pad = (this.skulls >= 6 && this.isTurbo) ? 120 : 80;
         const z = this.cameras.main.zoom || 1;
         this.skullContainer.setScale(1 / z);
         this.skullContainer.x = pad / z;
         this.skullContainer.y = pad / z;
     }
 
-    // Create a simple timer text in the top-right of the canvas
+    // Create timer text below the skulls bar, aligned on X axis with the skulls
     createTimerUI() {
-        const pad = 80;
         this.timerText = this.add.text(0, 0, '00:00', { fontSize: '20px', color: '#eaeef6' })
             .setScrollFactor(0)
             .setDepth(20);
         const z = this.cameras.main.zoom || 1;
         this.timerText.setScale(1 / z);
-        this.timerText.x = (this.scale.width - pad) / z;
-        this.timerText.y = pad / z;
-        this.timerText.setOrigin(1, 0); // top-right alignment
+        const gapBelow = 12; // vertical gap below the first skull row
+        const baseX = this.skullContainer ? this.skullContainer.x : 80;
+        const baseY = this.skullContainer ? this.skullContainer.y : 80; 
+        // Align exactly with the first skull's left border (inside container)
+        const firstSkullX = (this.skullTexts && this.skullTexts[0]) ? this.skullTexts[0].x : 16;
+        const firstSkullY = (this.skullTexts && this.skullTexts[0]) ? this.skullTexts[0].y : 16;
+        const firstSkullH = (this.skullTexts && this.skullTexts[0]) ? this.skullTexts[0].height : 36;
+        // X aligned to first skull's left, Y directly below its bottom plus gap
+        this.timerText.x = (baseX + firstSkullX) / z;
+        this.timerText.y = (baseY + firstSkullY + firstSkullH + gapBelow) / z;
+        this.timerText.setOrigin(0, 0);
     }
 
-    // Update timer text each frame and keep position stable against zoom
+    // Update timer text each frame and keep position below skulls stable against zoom
     updateTimerUI(dt) {
         if (!this.timerText) return;
         this.elapsedTime += dt;
@@ -1362,12 +1422,17 @@ export class Game extends Phaser.Scene {
         const mm = String(Math.floor(total / 60)).padStart(2, '0');
         const ss = String(total % 60).padStart(2, '0');
         this.timerText.setText(`${mm}:${ss}`);
-        // Maintain top-right position relative to zoom
-        const pad = 80;
         const z = this.cameras.main.zoom || 1;
         this.timerText.setScale(1 / z);
-        this.timerText.x = (this.scale.width - pad) / z;
-        this.timerText.y = pad / z;
-        this.timerText.setOrigin(1, 0);
+        const gapBelow = 12;
+        const baseX = this.skullContainer ? this.skullContainer.x : 80;
+        const baseY = this.skullContainer ? this.skullContainer.y : 80;
+        // Align exactly with the first skull's left/bottom within the container
+        const firstSkullX = (this.skullTexts && this.skullTexts[0]) ? this.skullTexts[0].x : 16;
+        const firstSkullY = (this.skullTexts && this.skullTexts[0]) ? this.skullTexts[0].y : 16;
+        const firstSkullH = (this.skullTexts && this.skullTexts[0]) ? this.skullTexts[0].height : 36;
+        this.timerText.x = (baseX + firstSkullX) / z;
+        this.timerText.y = (baseY + firstSkullY + firstSkullH + gapBelow) / z;
+        this.timerText.setOrigin(0, 0);
     }
 } 

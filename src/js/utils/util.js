@@ -27,31 +27,72 @@ export const SPEED_FACTS = [
   "Even the birds are gossiping about you.",
 ];
 
-// Distinct milestone entries (17) with unique titles and texts
-const MILESTONE_COLORS = [
-  '#f6ff00', '#CF3D3E', '#cfd6ec', '#8fb57b', '#eaeef6',
-  '#ffd166', '#06d6a0', '#118ab2', '#ef476f', '#8338ec'
-];
-
 export const MILESTONES = [
-  { id: 1, title: 'NEXT.JS / SEO', text: 'We have released Next.js at the end of August (besides a few major struggles with SEO 😉)', },
-  { id: 2, title: 'STORYBLOK', text: 'Improved scaling of our units for CSS Typography.', },
-  { id: 3, title: 'SUPPORT / ZENDESK', text: 'SSO Support for our Help Customer Support Page <> calimoto 🚀. (yes with a small twist - A Hacker asked for a NDA 😉.', },
-  { id: 4, title: '🐛-Fix --> TABLET SUPPORT FOR TOURPLANER', text: 'User can now use Android / iOS / Windows tablet for our Tourplaner without any issues ', },
-  { id: 5, title: 'STORYBLOK', text: 'Storyblok neue Feature Table - Rein via Flexbox, statt kompliziertet Table', },
-  { id: 6, title: 'GOOGLE TAG MANAGER', text: 'Web fits newest standards for Google Tag Manager. GTM works again 🚀', },
-  { id: 7, title: 'GROWTH LAB FAST DEPLOYMENT', text: 'We have added an additional deployment instance and process for quick release for our web-ftt.test.calimot.com page. Also added FlashOffer Experiment and a better saving process for the user when saving a Tour in inside Tourplaner 🚀.', },
-  { id: 8, title: 'STORYBLOK - BLACK FRIDAY', text: 'Added complete new Dialog in Storyblok, which is re-usable for many use cases (Flash Offer Dialog, Black Friday, Post-Planning Feedback an more) ⭐.', },
-  { id: 9, title: 'SEO', text: 'Clean-up of what we have missed after releasing Next.js - We proceeded with the proper Tour-Feed SEO release and after a lot of debugging sessions, meetings, research, we can tell that we fixed it, recently! ⭐. Thanks to Anna, Vivian and all participants for their help and patience. 🙏', },
-  { id: 10, title: 'TOURPLANER / MAPBOX', text: 'Removed legacy Tegola BE Service and replaced it with Mapbox Studio integration. (yes, Web tries to close the gap towards the Apps 🚀', },
-  { id: 11, title: 'WEB / KMM', text: 'Galina set the sails for KMM & WEB integrations as well as USE CASES! 🚀. Thanks to Willy for the initial Web Setup. 🙏', },
-  { id: 12, title: '⏳ LOADING TIME ', text: 'Reduced Loading Time and File Sizes to improve speed of our production page 🏍️.', },
-  { id: 13, title: 'SEO', text: 'First step towards correct error codes for Page Not Found (404), Gone (410) and more', },
-  { id: 14, title: 'Upgrade from NEXT.js 15.3 to 16.0.7 / SEO', text: '👀 ... 👀 ... 👀, Yes again upgrade of Next.js for faster turbopack loads on local environment and production (SEO 👅), and there was a hacking attempt last Friday because the previous Next.js Version had a vulnerability issue, which is fixed 🙏', },
-  { id: 15, title: 'Continous Improvement for Web tracking in MIXPANEL', text: 'Such as advanced profiles we email tracking.', },
-  { id: 16, title: 'STORYBLOK', text: 'Custom Storyblok Plugins for a more versatile usage of Storyblok without upgrading to Enterprise model! 💰🐷:', },
-  { id: 17, title: 'A lot of 🐛-Fixes (SEO & User Feedback & Co.)', text: 'Just Silence nothing more. 🤫', },
+  {
+    id: 1, title: '1. NEXT.JS / SEO', text: [
+      'We have released Next.js at the end of August (besides a few major struggles with SEO 😉). Huge Thank you to the complete Web Team! 🕸️',
+      'SEO: Clean-up of what we have missed after releasing Next.js - We proceeded with the proper Tour-Feed SEO release and after a lot of debugging sessions, meetings, research, we can tell that we fixed it, recently! ⭐.',
+      'SEO: Reduced Loading Time and File Sizes to improve speed of our production page 🏍️.',
+      'SEO: correct error codes (404/410…)',
+      'Thanks to Anna, Vivian and all participants for their help and patience. 🙏',
+    ]
+  },
+  {
+    id: 2, title: '2. STORYBLOK', text: [
+      'STORYBLOK: improved scaling of our units for CSS Typography.',
+      'STORYBLOK: added complete new Dialog in Storyblok, which is re-usable for many use cases (Flash Offer Dialog, Black Friday, Post-Planning Feedback and more) ⭐.',
+      'STORYBLOK: new Feature Table - via Flexbox, instead of complex HTML Table.',
+      'STORYBLOK: custom plugins (versatile usage without Enterprise)'
+    ]
+  },
+  {
+    id: 3, title: '3. SUPPORT / ZENDESK', text: [
+      'SSO: Support for our Help Customer Support Page <> calimoto 🚀. (yes with a small twist - A Hacker asked for a NDA 😉.',
+    ]
+  },
+  {
+    id: 4, title: '4. 🐛-Fix --> TABLET SUPPORT FOR Trip PLaner', text: [
+      'User can now use Android / iOS / Windows tablet for our Trip PLaner without any issues ',]
+  },
+  {
+    id: 5, title: '5. GOOGLE TAG MANAGER', text: [
+      'Web fits newest standards for Google Tag Manager. GTM works again 🚀',
+    ]
+  },
+  {
+    id: 6, title: '6. GROWTH LAB FAST DEPLOYMENT', text: [
+      'GROWTH: ae have added an additional deployment instance and process for quick release for FTT Test Environment.',
+      'GROWTH: also added FlashOffer Experiment (new FlashOffer Dialog)',
+      'GROWTH: tested and deployed a better saving process for the user when saving a Tour in inside Trip PLaner 🚀.',
+    ]
+  },
+  {
+    id: 7, title: '7. Trip PLaner / MAPBOX', text: [
+      'Removed legacy Tegola BE Service and replaced it with Mapbox Studio integration. (yes, Web tries to close the gap towards the Apps 🚀',
+    ]
+  },
+  {
+    id: 8, title: '8. WEB / KMM', text: [
+      'Galina set the sails for KMM & WEB integrations as well as USE CASES! 🚀.Thanks to Willy for the initial Web Setup. 🙏',
+    ]
+  },
+  {
+    id: 9, title: '9. ⏳ LOADING TIME & NEXT.JS UPGRADE (AGAIN 😩)', text: [
+      'NEXT.js upgrade to 16.0.7 + React upgrade from 19.0 to 19.2.0(fixed vulnerability which directly came from Next.js Framework & React, faster loads)',
+    ]
+  },
+  {
+    id: 10, title: '10. MISC. FIXES & UPDATES', text: [
+      'Fixed various bugs and issues reported from users and team members 🐛.',
+      'Mixpanel tracking improvements (advanced profiles)',
+      'Updated various dependencies and libraries to their latest versions for improved performance and security. 📦',
+    ]
+  },
 ].map((m, i) => ({
   ...m,
-  htmlText: `<span style="color: ${MILESTONE_COLORS[i % MILESTONE_COLORS.length]}">${m.text}</span>`
+  htmlText: Array.isArray(m.text)
+    ? (`<ul style="color: #fff; padding-left: 22px; margin: 8px 0 0; list-style-type: disc;">`
+      + m.text.map(t => `<li style="margin: 14px 0;">${t}</li>`).join('')
+      + `</ul>`)
+    : `<p style="color: #fff; margin: 0">${m.text}</p>`
 }));
