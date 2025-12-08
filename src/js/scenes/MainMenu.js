@@ -77,7 +77,7 @@ export class MainMenu extends Phaser.Scene {
       fontFamily: 'Helvetica, Arial, sans-serif', fontSize: '21px', color: '#eaeef6'
     }).setOrigin(0.5);
 
-    const hint = this.add.text(0, card.y + cardH / 2 + 230, 'Press Space to Begin', {
+    const hint = this.add.text(0, card.y + cardH / 2 + 230, 'Press Space or Tap to Begin', {
       fontFamily: 'Helvetica, Arial, sans-serif', fontSize: '32px', color: '#CF3D3E'
     }).setOrigin(0.5);
 
@@ -85,5 +85,7 @@ export class MainMenu extends Phaser.Scene {
     this.tweens.add({ targets: hint, alpha: { from: 0.6, to: 1 }, yoyo: true, repeat: -1, duration: 900, ease: 'Sine.easeInOut' });
     this.tweens.add({ targets: card, y: { from: card.y - 2, to: card.y + 2 }, yoyo: true, repeat: -1, duration: 2000, ease: 'Sine.easeInOut' });
     this.input.keyboard.once('keydown-SPACE', () => this.scene.start('Game'));
+    // Mobile/touch start: tap anywhere to begin
+    this.input.once('pointerdown', () => this.scene.start('Game'));
   }
 }

@@ -18,3 +18,46 @@ html, body {
 .center-note { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: var(--text); pointer-events: none; }
 .center-note h1 { margin: 0 0 8px 0; font-weight: 800; letter-spacing: 1px; }
 .center-note p { margin: 4px 0; opacity: 0.8; }
+
+/* Mobile HUD */
+.mobile-hud { position: fixed; inset: 0; pointer-events: none; z-index: 10000; display: none; }
+.mobile-btn {
+  position: absolute;
+  bottom: 20px;
+  width: 92px;
+  height: 92px;
+  border-radius: 18px;
+  border: 1px solid var(--panel-border);
+  background: rgba(13, 18, 30, 0.72);
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+.mobile-btn--left { left: 20px; }
+.mobile-btn--right { right: 20px; }
+.mobile-btn--center { left: 50%; transform: translateX(-50%); }
+/* removed Wheelie center-top button */
+.mobile-btn:active { transform: translateX(-50%) scale(0.98); }
+.mobile-btn--left:active { transform: scale(0.98); }
+.mobile-btn--right:active { transform: scale(0.98); }
+
+/* Show HUD only on touch/coarse pointers in landscape and typical phone/tablet viewports */
+@media (pointer: coarse) and (orientation: landscape) {
+  #mobileHud { display: block; }
+}
+/* Additional fallback for devices not reporting pointer accurately */
+@media (max-width: 1024px) and (orientation: landscape) {
+  #mobileHud { display: block; }
+}
+@media (hover: hover) and (pointer: fine) {
+  #mobileHud { display: none; }
+}
+
+/* Rotate overlay */
+.rotate-overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(9,16,28,0.88); z-index: 10001; }
+.rotate-card { background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 16px; padding: 20px 22px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
+.rotate-card h3 { margin: 0 0 8px; }
+.rotate-card p { margin: 0; opacity: 0.85; }
